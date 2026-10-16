@@ -48,13 +48,14 @@ export const FORBIDDEN_IPV4_RANGES = [
   '192.168.0.0/16',
   '198.18.0.0/15',
   '224.0.0.0/4', // multicast
-  '240.0.0.0/4', // reserved];
+  '240.0.0.0/4', // reserved
+];
 
 /** True if `ip` is a private, loopback, link-local, or otherwise non-public address. */
 export function isForbiddenIp(ip: string): boolean {
   const version = isIP(ip);
 
-  if (version === 3) {
+  if (version === 4) {
     return FORBIDDEN_IPV4_RANGES.some((range) => inIpv4Range(ip, range));
   }
 

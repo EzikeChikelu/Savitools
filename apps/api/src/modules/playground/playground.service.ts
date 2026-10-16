@@ -222,6 +222,21 @@ export class PlaygroundService {
     } else {
       baseUrl = this.getProviderBaseUrl(dto.provider);
       if (!baseUrl) {
+        if (dto.provider === ApiKeyProvider.FLUXA) {
+          return {
+            status: 200,
+            headers: { 'content-type': 'application/json' },
+            body: {
+              mock: true,
+              provider: 'fluxa',
+              message: 'Fluxa API is not hosted publicly yet. This is a local sandbox response.',
+              path: dto.path,
+              method: dto.method,
+              timestamp: new Date().toISOString(),
+            },
+            latencyMs: 12,
+          };
+        }
         throw new BadRequestException(`${dto.provider} API URL is not configured`);
       }
 
@@ -662,7 +677,7 @@ export class PlaygroundService {
       case ApiKeyProvider.FLUXA:
         return this.configService.get<string>('FLUXA_API_URL') ?? null;
       case ApiKeyProvider.CROWDPAY:
-        return this.configService.get<string>('CROWDPAY_API_URL') ?? null;
+        return this.configService.get<string>('CROWDPAY_API_URL') ?? 'https://crowdpay.up.railway.app';
     }
   }
 

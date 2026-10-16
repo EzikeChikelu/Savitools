@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Check, AlertCircle, Info, Download, Upload } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface ValidationIssue {
   level: 'error' | 'warning' | 'info';
@@ -47,23 +48,16 @@ export default function StellarTomlPage() {
     setValidationResult(null);
 
     try {
-      const response = await fetch('/api/stellar-toml/validate', {
+      const result = await apiFetch<any>('/stellar-toml/validate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
           level: validationLevel,
           network
         })
       });
-
-      if (!response.ok) {
-        throw new Error('Validation failed');
-      }
-
-      const result = await response.json();
       setValidationResult(result);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Validation failed');
     } finally {
       setLoading(false);
@@ -75,24 +69,17 @@ export default function StellarTomlPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/stellar-toml/format', {
+      const result = await apiFetch<any>('/stellar-toml/format', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content,
           indent: indentStyle,
           indentSize
         })
       });
-
-      if (!response.ok) {
-        throw new Error('Formatting failed');
-      }
-
-      const result = await response.json();
       setFormattedContent(result.formatted);
       setContent(result.formatted);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Formatting failed');
     } finally {
       setLoading(false);
@@ -104,15 +91,9 @@ export default function StellarTomlPage() {
     setError(null);
 
     try {
-      const response = await fetch(`/api/stellar-toml/template?type=${type}`);
-
-      if (!response.ok) {
-        throw new Error('Failed to load template');
-      }
-
-      const result = await response.json();
+      const result = await apiFetch<any>(`/stellar-toml/template?type=${type}`);
       setContent(result.template);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Failed to load template');
     } finally {
       setLoading(false);
