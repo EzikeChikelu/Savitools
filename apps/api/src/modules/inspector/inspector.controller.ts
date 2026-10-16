@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Header, Param, Post, Query, Res } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
-import { DecodeXdrDto } from './dto/decode-xdr.dto';
+import { DecodeXDrDto } from './dto/decode-xdr.dto';
 import { InspectAuthEntryDto } from './dto/inspect-auth-entry.dto';
 import { InspectorService } from './inspector.service';
 
@@ -30,8 +30,8 @@ export class InspectorController {
   @Header('Content-Type', 'text/csv; charset=utf-8')
   async exportTransaction(
     @Param('hash') hash: string,
-    @Res({ pasthrough: true }) reply: FastifyReply,
-    Query('network') network?: 'testnet' | 'mainnet',
+    @Res() reply: FastifyReply,
+    @Query('network') network?: 'testnet' | 'mainnet',
   ) {
     const breakdown = await this.inspectorService.inspectTransaction(
       hash,
@@ -41,7 +41,7 @@ export class InspectorController {
       'Content-Disposition',
       `attachment; filename="transaction-${hash.slice(0, 12)}.csv"`,
     );
-    return this.inspectorService.exportTransactionCsv(breakdown);
+    return this.inspectorService.exportTransactionCsv();
   }
 
   @Get('tx/:hash/events')
@@ -55,8 +55,8 @@ export class InspectorController {
   getTransactionEvents(
     @Param('hash') hash: string,
     @Query('network') network?: 'testnet' | 'mainnet',
-    Query('contractId') contractId?: string,
-    Query('eventName') eventName?: string,
+    @Query('contractId') contractId?: string,
+    @Query('eventName') eventName?: string,
   ) {
     return this.inspectorService.getTransactionEvents(hash, network ?? 'testnet', {
       contractId,
@@ -74,8 +74,8 @@ export class InspectorController {
   getTransactionEventsAlias(
     @Param('txHash') txHash: string,
     @Query('network') network?: 'testnet' | 'mainnet',
-    Query('contractId') contractId?: string,
-    Query('eventName') eventName?: string,
+    @Query('contractId') contractId?: string,
+    @Query('eventName') eventName?: string,
   ) {
     return this.inspectorService.getTransactionEvents(txHash, network ?? 'testnet', {
       contractId,
@@ -96,7 +96,7 @@ export class InspectorController {
 
   @Post('decode-xdr')
   @ApiOperation({ summary: 'Decode raw XDR (offline, no Horizon call)' })
-  decodeXdr(@Body() dto: DecodeXdrDto) {
+  decodeXdr(@Body() dto: DecodeXDrDto) {
     return this.inspectorService.decodeXdr(dto.xdr, dto.network ?? 'testnet');
   }
 
