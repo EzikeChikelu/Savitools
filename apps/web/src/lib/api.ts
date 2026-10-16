@@ -2199,8 +2199,6 @@ export async function getSorobanRpcMethod(method: string) {
 
 /* ─── Liquidity Pools ─────────────────────────────────────────────────────── */
 
-export type NetworkChoice = 'mainnet' | 'testnet';
-
 export interface PoolDetails {
   poolId: string;
   network: string;

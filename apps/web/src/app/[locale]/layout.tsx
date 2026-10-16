@@ -5,7 +5,6 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { AuthProvider } from '@/lib/auth-context';
 import { NetworkProvider } from '@/lib/network-context';
-import { SiteHeader } from '@/components/site-header';
 import {
   CommandPaletteProvider,
   CommandPaletteDialog,
@@ -23,10 +22,11 @@ const geistMono = Geist_Mono({
 });
 
 export async function generateMetadata({
-  params: { locale }
+  params
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
+  const { locale } = await params;
   const messages = await getMessages();
   const metadata = messages.metadata as any;
   
@@ -38,11 +38,12 @@ export async function generateMetadata({
 
 export default async function RootLayout({
   children,
-  params: { locale }
+  params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   // Providing all messages to the client side is the easiest way to get started
   const messages = await getMessages();
 
@@ -53,7 +54,6 @@ export default async function RootLayout({
           <AuthProvider>
             <NetworkProvider>
               <CommandPaletteProvider>
-                <SiteHeader />
                 {children}
                 <CommandPaletteDialog />
               </CommandPaletteProvider>

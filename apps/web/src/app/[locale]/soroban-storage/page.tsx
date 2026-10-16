@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertCircle, Database, GitCompare, Key, Clock, Info } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface StorageEntry {
   key: {
@@ -72,8 +72,6 @@ interface StorageCompareResult {
 }
 
 export default function SorobanStoragePage() {
-  const t = useTranslations('sorobanStorage');
-  
   // State for query form
   const [queryForm, setQueryForm] = useState({
     contractId: '',
@@ -124,12 +122,9 @@ export default function SorobanStoragePage() {
   const loadDurabilityInfo = async () => {
     setLoading({ ...loading, durability: true });
     try {
-      const response = await fetch('/api/soroban-storage/durability-info');
-      if (response.ok) {
-        const info = await response.json();
-        setDurabilityInfo(info);
-      }
-    } catch (error) {
+      const info = await apiFetch<any>('/soroban-storage/durability-info');
+      setDurabilityInfo(info);
+    } catch (error: any) {
       console.error('Failed to load durability info:', error);
     } finally {
       setLoading({ ...loading, durability: false });
@@ -141,20 +136,13 @@ export default function SorobanStoragePage() {
     setErrors({ ...errors, query: '' });
 
     try {
-      const response = await fetch('/api/soroban-storage/query', {
+      const result = await apiFetch<any>('/soroban-storage/query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(queryForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setQueryResult(result);
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, query: error.message });
     } finally {
       setLoading({ ...loading, query: false });
@@ -166,24 +154,17 @@ export default function SorobanStoragePage() {
     setErrors({ ...errors, compare: '' });
 
     try {
-      const response = await fetch('/api/soroban-storage/compare', {
+      const result = await apiFetch<any>('/soroban-storage/compare', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...compareForm,
           ledgerSeq1: parseInt(compareForm.ledgerSeq1),
           ledgerSeq2: parseInt(compareForm.ledgerSeq2),
         }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setCompareResult(result);
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, compare: error.message });
     } finally {
       setLoading({ ...loading, compare: false });
@@ -195,17 +176,10 @@ export default function SorobanStoragePage() {
     setErrors({ ...errors, typedKey: '' });
 
     try {
-      const response = await fetch('/api/soroban-storage/create-typed-key', {
+      const result = await apiFetch<any>('/soroban-storage/create-typed-key', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(typedKeyForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setTypedKeyResult(result);
 
       // Auto-populate query form with the generated key
@@ -214,8 +188,8 @@ export default function SorobanStoragePage() {
         storageKey: result.xdr,
       });
       
-    } catch (error) {
-      setErrors({ ...errors, typedKey: error.message });
+    } catch (error: any) {
+      setErrors({ ...errors, typedKey: error.message || String(error) });
     } finally {
       setLoading({ ...loading, typedKey: false });
     }
@@ -250,9 +224,9 @@ export default function SorobanStoragePage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold">{t('title', 'Soroban Contract Storage Explorer')}</h1>
+        <h1 className="text-3xl font-bold">Soroban Contract Storage Explorer</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          {t('description', 'Inspect Soroban contract storage keys, decode values, and compare changes across ledgers with comprehensive history tracking.')}
+          Inspect Soroban contract storage keys, decode values, and compare changes across ledgers with comprehensive history tracking.
         </p>
       </div>
 

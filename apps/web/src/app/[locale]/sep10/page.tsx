@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckCircle, XCircle, AlertCircle, Shield, Clock, Globe, Key } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface ValidationCheck {
   name: string;
@@ -55,8 +55,6 @@ interface HttpDiagnostics {
 }
 
 export default function Sep10DebuggerPage() {
-  const t = useTranslations('sep10');
-  
   // State for fetch challenge
   const [fetchForm, setFetchForm] = useState({
     domain: '',
@@ -129,17 +127,10 @@ export default function Sep10DebuggerPage() {
     setErrors({ ...errors, fetch: '' });
 
     try {
-      const response = await fetch('/api/sep10/fetch-challenge', {
+      const result = await apiFetch<any>('/sep10/fetch-challenge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fetchForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setFetchResult(result);
 
       // Auto-populate validate form
@@ -158,7 +149,7 @@ export default function Sep10DebuggerPage() {
         challengeXdr: result.challenge.xdr,
       });
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, fetch: error.message });
     } finally {
       setLoading({ ...loading, fetch: false });
@@ -170,20 +161,13 @@ export default function Sep10DebuggerPage() {
     setErrors({ ...errors, validate: '' });
 
     try {
-      const response = await fetch('/api/sep10/validate-challenge', {
+      const result = await apiFetch<any>('/sep10/validate-challenge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(validateForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setValidateResult(result);
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, validate: error.message });
     } finally {
       setLoading({ ...loading, validate: false });
@@ -195,17 +179,10 @@ export default function Sep10DebuggerPage() {
     setErrors({ ...errors, sign: '' });
 
     try {
-      const response = await fetch('/api/sep10/sign-challenge', {
+      const result = await apiFetch<any>('/sep10/sign-challenge', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(signForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setSignResult(result);
 
       // Auto-populate token exchange form
@@ -215,7 +192,7 @@ export default function Sep10DebuggerPage() {
         domain: fetchForm.domain,
       });
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, sign: error.message });
     } finally {
       setLoading({ ...loading, sign: false });
@@ -227,20 +204,13 @@ export default function Sep10DebuggerPage() {
     setErrors({ ...errors, token: '' });
 
     try {
-      const response = await fetch('/api/sep10/exchange-token', {
+      const result = await apiFetch<any>('/sep10/exchange-token', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(tokenForm),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       setTokenResult(result);
       
-    } catch (error) {
+    } catch (error: any) {
       setErrors({ ...errors, token: error.message });
     } finally {
       setLoading({ ...loading, token: false });
@@ -276,16 +246,16 @@ export default function Sep10DebuggerPage() {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold">{t('title', 'SEP-10 Web Authentication Debugger')}</h1>
+        <h1 className="text-3xl font-bold">SEP-10 Web Authentication Debugger</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          {t('description', 'Debug SEP-10 challenge transactions, validate signatures, and test token exchange flows without exposing secrets.')}
+          Debug SEP-10 challenge transactions, validate signatures, and test token exchange flows without exposing secrets.
         </p>
       </div>
 
       <Alert>
         <Shield className="h-4 w-4" />
         <AlertDescription>
-          {t('securityNotice', 'This tool never stores or logs secret keys. All sensitive data is redacted from responses for security.')}
+          This tool never stores or logs secret keys. All sensitive data is redacted from responses for security.
         </AlertDescription>
       </Alert>
 

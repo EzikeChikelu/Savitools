@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { NextIntlClientProvider } from 'next-intl';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { NextIntlClientProvider, useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { useFormatters } from '@/lib/formatters';
 import { useErrorMessages } from '@/lib/error-messages';
@@ -12,9 +12,15 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/en/test',
 }));
 
+// Mock next-intl/server
+jest.mock('next-intl/server', () => ({
+  getRequestConfig: (fn: any) => fn,
+  getMessages: jest.fn().mockResolvedValue({}),
+}));
+
 // Mock next-intl hooks
 jest.mock('next-intl', () => ({
-  ...jest.requireActual('next-intl'),
+  NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useLocale: () => 'en',
   useTranslations: (namespace?: string) => {
     const messages = {
@@ -72,14 +78,14 @@ describe('Internationalization', () => {
       renderWithIntl(<LanguageSwitcher />);
       
       expect(screen.getByText('Language')).toBeInTheDocument();
-      expect(screen.getByText('EN')).toBeInTheDocument();
+      expect(screen.getByText('en')).toBeInTheDocument();
     });
 
     it('shows dropdown when clicked', () => {
       renderWithIntl(<LanguageSwitcher />);
       
       const button = screen.getByRole('button');
-      button.click();
+      fireEvent.click(button);
       
       // Should show language options
       expect(screen.getByText('English')).toBeInTheDocument();

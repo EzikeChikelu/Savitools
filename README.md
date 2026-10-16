@@ -12,23 +12,30 @@ SaviTools is a standalone product in the [Savitura](https://savitura.com) ecosys
 
 ## Tools
 
-| Tool                      | What it does                                                                          | Status |
-| ------------------------- | ------------------------------------------------------------------------------------- | ------ |
-| **Transaction Inspector** | Decode any tx hash, Stellar address, or raw XDR into a human-readable breakdown       | MVP    |
-| **Wallet Sandbox**        | Generate testnet keypairs, fund via Friendbot, send test payments                     | MVP    |
-| **Transaction Composer**  | Visual builder for multi-operation Stellar transactions; sign and submit without code | MVP    |
-| **Payment Simulator**     | Find path payment routes between assets; preview hops, rates, and fees                | MVP    |
-| **Webhook Tester**        | Fire sample CrowdPay / Fluxa webhook payloads at your endpoint; inspect the response  | MVP    |
-| **Ledger Monitor**        | Watch a Stellar address or contract for live activity; set threshold alerts           | MVP    |
-| **API Playground**        | Interactive request builder for Fluxa and CrowdPay APIs                               | MVP    |
-| **Contract Deployer**     | Upload and deploy Soroban WASM files to testnet from the browser                      | MVP    |
-| **SDK Generator**         | Generate copy-paste client code (JS, Python, Go, cURL) from Fluxa/CrowdPay endpoints  | MVP     |
-| **Network Status**        | Live Stellar network health: ledger close time, fee tracker, Horizon latency          | MVP     |
-| **Federation & TOML**     | Resolve federation addresses, inspect stellar.toml files, check SEP compliance        | MVP    |
-| **Order Book**            | Live DEX order book, spread analytics, and liquidity depth chart for any asset pair   | MVP    |
-| **Account Graph**         | Visualize signer networks, offers, and payment relationships with a force-directed graph | MVP |
-| **Contract Events**       | Decode, filter, and replay Soroban contract events from raw ScVal XDR                 | MVP    |
-| **Liquidity Pool Explorer** | Search Stellar AMM pools, calculate LP share values, and track favorite pools          | MVP    |
+| Tool                        | What it does                                                                           | Status |
+| --------------------------- | -------------------------------------------------------------------------------------- | ------ |
+| **Transaction Inspector**   | Decode any tx hash, Stellar address, or raw XDR into a human-readable breakdown        | Active |
+| **Wallet Sandbox**          | Generate testnet keypairs, fund via Friendbot, send test payments                      | Active |
+| **Transaction Composer**    | Visual builder for multi-operation Stellar transactions; sign and submit without code  | Active |
+| **Payment Simulator**       | Find path payment routes between assets; preview hops, rates, and fees                 | Active |
+| **Webhook Tester**          | Fire sample CrowdPay / Fluxa webhook payloads at your endpoint; inspect the response   | Active |
+| **Ledger Monitor**          | Watch a Stellar address or contract for live activity; set threshold alerts            | Active |
+| **API Playground**          | Interactive request builder for Fluxa (mock/sandbox) and CrowdPay (Railway) APIs       | Active |
+| **Contract Deployer**       | Upload and deploy Soroban WASM files to testnet from the browser                       | Active |
+| **SDK Generator**           | Generate copy-paste client code (JS, Python, Go, cURL) from Fluxa/CrowdPay endpoints   | Active |
+| **Network Status**          | Live Stellar network health: ledger close time, fee tracker, Horizon latency           | Active |
+| **Federation & TOML**       | Resolve federation addresses, inspect stellar.toml files, check SEP compliance         | Active |
+| **Order Book**              | Live DEX order book, spread analytics, and liquidity depth chart for any asset pair    | Active |
+| **Account Graph**           | Visualize signer networks, offers, and payment relationships with a force-directed graph | Active |
+| **Contract Events**         | Decode, filter, and replay Soroban contract events from raw ScVal XDR                  | Active |
+| **Liquidity Pool Explorer** | Search Stellar AMM pools, calculate LP share values, and track favorite pools          | Active |
+| **Asset Control**           | Inspect issuer authorization flags, audit trustlines, assemble clawback/flag txs       | Active |
+| **Slippage Lab**            | Price slippage tolerances against adverse rate moves in path payments                  | Active |
+| **Multisig Simulator**      | Check threshold clearance and identify outstanding signers                             | Active |
+| **Soroban RPC**             | Schema-aware read-only Soroban JSON-RPC method invocation and response viewer          | Active |
+| **QR Handoff**              | Move unsigned/signed transactions across air gaps via animated checksummed QR frames   | Active |
+| **Soroban Storage**         | Inspect contract storage entries across Instance, Persistent, and Temporary storage    | Active |
+| **Sequence Planner**        | Plan fee bumps and sequence numbers for queued Stellar transactions                    | Active |
 
 See the [Contract Events guide](docs/contract-events.md) for filter criteria, limits, and API usage.
 
@@ -64,16 +71,25 @@ savitools/
 │   ├── web/                      # Next.js 15 frontend
 │   │   └── src/app/
 │   │       ├── page.tsx          # Home / onboarding
-│   │       ├── inspector/        # Transaction Inspector
-│   │       ├── sandbox/          # Wallet Sandbox
+│   │       ├── inspector/        # Transaction Inspector & Account Graph
+│   │       ├── sandbox/          # Wallet Sandbox & Asset Control
 │   │       ├── composer/         # Transaction Composer
-│   │       ├── simulator/        # Payment Simulator (route finder)
+│   │       ├── simulator/        # Payment Simulator, Order Book & Slippage Lab
 │   │       ├── webhooks/         # Webhook Tester
 │   │       ├── monitor/          # Ledger Monitor
 │   │       ├── playground/       # API Playground
-│   │       ├── contracts/        # Soroban Deploy Helper
+│   │       ├── contracts/        # Soroban Deploy Helper & Contract Events
 │   │       ├── sdk/              # SDK Generator
-│   │       └── network/          # Network Status
+│   │       ├── network/          # Network Status
+│   │       ├── multisig/         # Multisig Simulator
+│   │       ├── rpc/              # Soroban RPC Runner
+│   │       ├── qr-handoff/       # Air-gapped QR transaction handoff
+│   │       ├── liquidity-pools/  # Liquidity Pool Explorer
+│   │       └── [locale]/         # Localized routes (i18n)
+│   │           ├── soroban-storage/  # Soroban Storage Explorer
+│   │           ├── sep10/            # SEP-10 WebAuth Helper
+│   │           ├── sequence-planner/ # Sequence Bump Planner
+│   │           └── stellar-toml/     # Stellar TOML Inspector
 │   │
 │   └── api/                      # NestJS backend
 │       └── src/modules/
@@ -86,11 +102,73 @@ savitools/
 │           ├── contracts/         # Soroban WASM upload + deploy
 │           ├── sdkgen/            # Client code generation
 │           ├── network/           # Fee stats, ledger health
+│           ├── federation/        # TOML and address resolution
+│           ├── metrics/           # Prometheus metrics export
+│           ├── sandbox/           # Wallet sandbox and Friendbot
+│           ├── workspace/         # Multi-tenant workspace mgmt
+│           ├── stellar/           # Stellar network / RPC helpers
 │           └── auth/              # User accounts, JWT, Fluxa SSO
 │
+├── src/                          # Standalone SEP-10 & SEP-24 Debugger library
+│   ├── debugger/
+│   │   ├── SEP10Debugger.ts      # SEP-10 WebAuth challenge/response authentication
+│   │   └── SEP24Debugger.ts      # SEP-24 interactive deposit/withdrawal workflow runner
+│   ├── util/                     # URL validation, TOML resolution, redactor
+│   └── index.ts                  # Library entrypoint exports
+│
+├── tests/                        # Tests for root debugger library (SEP24Debugger.test.ts)
 ├── docker-compose.yml
 ├── turbo.json
 └── .env.example
+```
+
+---
+
+## SEP-10 & SEP-24 Debugger Library (`src/`)
+
+Located at the repository root in `src/`, this standalone TypeScript library provides protocol-level debugging and automation for Stellar anchors implementing **SEP-10** (Stellar Web Authentication) and **SEP-24** (Interactive Deposit & Withdrawal):
+
+- **`SEP10Debugger` (`src/debugger/SEP10Debugger.ts`)**:
+  - Handles the SEP-10 challenge-response authentication handshake.
+  - Fetches the challenge transaction from the anchor's web auth endpoint.
+  - Cryptographically verifies and signs the transaction with client keypairs.
+  - Submits the signed transaction to exchange for a JWT token, managing token caching and expiration.
+
+- **`SEP24Debugger` (`src/debugger/SEP24Debugger.ts`)**:
+  - Resolves `stellar.toml` to automatically discover `TRANSFER_SERVER_SEP0024` and `WEB_AUTH_ENDPOINT`.
+  - Executes authenticated SEP-10 authentication to obtain authorization.
+  - Initiates interactive deposit or withdrawal flows (`/transactions/deposit/interactive` or `/transactions/withdraw/interactive`).
+  - Polls transaction status and generates a comprehensive, redacted diagnostic timeline of every request and response.
+
+### Usage Example
+
+```typescript
+import { SEP10Debugger, SEP24Debugger } from './src';
+
+// 1. Initialize SEP-10 authenticator
+const sep10 = new SEP10Debugger({
+  anchorDomain: 'testanchor.stellar.org',
+  testnet: true,
+});
+
+// 2. Initialize SEP-24 workflow runner
+const sep24 = new SEP24Debugger(
+  {
+    anchorDomain: 'testanchor.stellar.org',
+    asset: 'USDC',
+    flowType: 'deposit',
+    testnet: true,
+    timeout: 60000,
+  },
+  sep10
+);
+
+// 3. Run interactive flow and retrieve diagnostic timeline
+const result = await sep24.startFlow();
+console.log('Interactive URL:', result.interactiveUrl);
+console.log('Transaction ID:', result.transactionId);
+console.log('Diagnostic Timeline:', result.timeline);
+console.log('Final Status:', result.finalStatus);
 ```
 
 ---
@@ -334,8 +412,3 @@ MIT
 
 The API includes a Prometheus-compatible `GET /metrics` endpoint with HTTP, Soroban RPC, contract invocation, Horizon, Redis, and Node.js runtime metrics. See [API metrics](docs/metrics.md) for access control, Prometheus scrape configuration, and the Grafana dashboard import template.
 
-           ├── federation/        # TOML and address resolution
-           ├── metrics/           # Prometheus metrics export
-           ├── sandbox/           # Wallet sandbox and Friendbot
-           ├── workspace/         # Multi-tenant workspace mgmt
-           ├── stellar/           # Stellar network / RPC helpers
