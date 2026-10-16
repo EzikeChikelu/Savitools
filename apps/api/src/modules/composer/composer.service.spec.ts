@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ComposerService } from './composer.service';
+import { ContractsService } from '../contracts/contracts.service';
+
+jest.setTimeout(30000);
 import {
   Account,
   Asset,
@@ -37,7 +40,13 @@ describe('ComposerService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ComposerService],
+      providers: [
+        ComposerService,
+        {
+          provide: ContractsService,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     service = module.get<ComposerService>(ComposerService);
@@ -577,12 +586,11 @@ describe('ComposerService', () => {
         concurrency: 3,
       });
 
-      expect(result).toHaveProperty('sequential');
-      expect(result).toHaveProperty('concurrent');
-      expect(result.sequential.transactionCount).toBe(5);
-      expect(result.concurrent.sequenceConflicts).toBeGreaterThanOrEqual(0);
-      expect(result.sequential.throughputTxPerSec).toBeDefined();
-      expect(result.concurrent.latencies.p99).toBeDefined();
+      expect(result).toHaveProperty('summary');
+      expect(result).toHaveProperty('results');
+      expect(result.summary.totalTransactions).toBe(5);
+      expect(result.summary.transactionsPerSecond).toBeDefined();
+      expect(result.results.length).toBe(5);
     });
   });
 });

@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { GitBranch, Plus, Trash2, AlertCircle, CheckCircle2, Info, Play } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 interface Transaction {
   id: string;
@@ -84,22 +85,15 @@ export default function SequencePlannerPage() {
     setPlanResult(null);
 
     try {
-      const response = await fetch('/api/sequence-planner/plan', {
+      const result = await apiFetch<any>('/sequence-planner/plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           transactions: transactions.filter(tx => tx.sourceAccount),
           network
         })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to plan sequences');
-      }
-
-      const result = await response.json();
       setPlanResult(result);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Failed to plan sequences');
     } finally {
       setLoading(false);
@@ -112,23 +106,16 @@ export default function SequencePlannerPage() {
     setValidationResult(null);
 
     try {
-      const response = await fetch('/api/sequence-planner/validate-sequence', {
+      const result = await apiFetch<any>('/sequence-planner/validate-sequence', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           account: singleAccount,
           proposedSequence: parseInt(proposedSequence),
           network
         })
       });
-
-      if (!response.ok) {
-        throw new Error('Validation failed');
-      }
-
-      const result = await response.json();
       setValidationResult(result);
-    } catch (err) {
+    } catch (err: any) {
       setError(err instanceof Error ? err.message : 'Validation failed');
     } finally {
       setLoading(false);

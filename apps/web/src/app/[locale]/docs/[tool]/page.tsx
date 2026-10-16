@@ -1,5 +1,4 @@
 import { toolDocs } from '@/lib/tool-docs';
-import { seP24DebuggerDocs } from '@/lib/tool-docs/sep24-debugger';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -11,7 +10,7 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 
-const allToolDocs = [...toolDocs, ...seP24DebuggerDocs];
+const allToolDocs = toolDocs;
 
 export function generateStaticParams() {
   return allToolDocs.map((tool) => ({ tool: tool.slug }));

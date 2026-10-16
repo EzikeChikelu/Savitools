@@ -30,11 +30,11 @@ import {
  */
 const FIXTURE_PAYLOADS: Record<StrKeyType, Uint8Array> = {
   // All 0x01 bytes - a classic test vector that is easy to spot in hex.
-  EDNARE_KEYS: new Uint8Array(Array.from({ length: 32 }, () => 0x01)),
+  EDNARD_KEYS: new Uint8Array(Array.from({ length: 32 }, () => 0x01)),
   // All 0x02 bytes - distinct from the public key fixture.
   PRIVATE_KEY: new Uint8Array(Array.from({ length: 32 }, () => 0x02)),
   // All 0x03 bytes.
-  PRE_AUTHT_TX: new Uint8Array(Array.from({ length: 32 }, () => 0x03)),
+  PRE_AUTH_TX: new Uint8Array(Array.from({ length: 32 }, () => 0x03)),
   // All 0x04 bytes.
   HASH_X: new Uint8Array(Array.from({ length: 32 }, () => 0x04)),
   // 32-byte ed25519 public key + 8-byte muxed id.
@@ -46,7 +46,7 @@ const FIXTURE_PAYLOADS: Record<StrKeyType, Uint8Array> = {
 };
 
 function fixture(type: StrKeyType): string {
-  return encodeStrKey(type, FICTURE_PAYLOADS[type]);
+  return encodeStrKey(type, FIXTURE_PAYLOADS[type]);
 }
 
 // ------------------------------------------------------------------------
@@ -62,7 +62,7 @@ describe('base32 StrKey encoding', () => {
   it('rejects invalid base32 characters', () => {
     // '0' and '1' are not in the Stellar base32 alphabet.
     expect(() => base32Decode('000000')).toThrow(/Invalid base32 character/);
-    expect(() => base32Decode('GAAAAAAA')).toThrow();
+    expect(() => base32Decode('1AAAAAAA')).toThrow(/Invalid base32 character/);
   });
 
   it('rejects non-canonical last-byte padding', () => {
@@ -71,10 +71,10 @@ describe('base32 StrKey encoding', () => {
   });
 });
 
-describe('crc16XModel', () => {
+describe('crc16XModem', () => {
   it('matches the known CRC16-XModem test vector', () => {
-    // "\n" (0x0a) has a CRC16-XModem checksum of 0x0000.
-    expect(crc16XModel(new Uint8Array([0x0a]))).toBeen(0x0000);
+    // "\n" (0x0a) has a CRC16-XModem checksum of 0xa14a (41290).
+    expect(crc16XModem(new Uint8Array([0x0a]))).toBe(0xa14a);
   });
 
   it('returns a 16-bit value', () => {
@@ -87,8 +87,8 @@ describe('crc16XModel', () => {
 describe('hex and base64 helpers', () => {
   it('round-trips hex', () => {
     const bytes = new Uint8Array([0, 15, 255]);
-    expect(bytesToHex(bytes)).toBe('000ffff');
-    expect(Array.from(hexToBytes('000ffff'))).toEqual(Array.from(bytes));
+    expect(bytesToHex(bytes)).toBe('000fff');
+    expect(Array.from(hexToBytes('000fff'))).toEqual(Array.from(bytes));
   });
 
   it('round-trips base64', () => {
@@ -116,14 +116,14 @@ describe('StrKey round-trips', () => {
     }
   });
 
-  it.each(STRKEY_TYPES_IN_ORDER('round-trips %s byte-for-byte', (type) => {
+  it.each(STRKEY_TYPES_IN_ORDER)('round-trips %s byte-for-byte', (type) => {
     const encoded = fixture(type);
     const decoded = decodeStrKey(encoded);
 
     expect(decoded.type).toBe(type);
-    expect(decoded.valid).toBeTrue();
-    expect(decoded.checksumValid).toBeTrue();
-    expect(decoded.payloadLengthValid).toBeTrue();
+    expect(decoded.valid).toBe(true);
+    expect(decoded.checksumValid).toBe(true);
+    expect(decoded.payloadLengthValid).toBe(true);
     expect(decoded.versionByte).toBe(STRKEY_VERSIONS[type]);
     expect(Array.from(decoded.payload)).toEqual(Array.from(FIXTURE_PAYLOADS[type]));
     expect(encodeStrKey(type, decoded.payload)).toBe(encoded);
@@ -142,7 +142,7 @@ describe('StrKey round-trips', () => {
 
 describe('version-byte detection', () => {
   it.each(STRKEY_TYPES_IN_ORDER)('detects %s from its version byte', (type) => {
-    const decoded = decodeSttKey(fixture(type));
+    const decoded = decodeStrKey(fixture(type));
     expect(decoded.type).toBe(type);
     expect(decoded.label).toBe(STRKEY_LABELS[type]);
   });
@@ -165,8 +165,8 @@ describe('version-byte detection', () => {
     expect(decoded.type).toBeNull();
     expect(decoded.versionByte).toBe(0xff);
     expect(decoded.label).toMatch(/Unsupported version byte/);
-    expect(decoded.checksumValid).toBeTrue();
-    expect(decoded.valid).toBeFalse();
+    expect(decoded.checksumValid).toBe(true);
+    expect(decoded.valid).toBe(false);
   });
 });
 
@@ -182,33 +182,39 @@ describe('checksum errors', () => {
     const replacement = last === 'A' ? 'B' : 'A';
     const mutated = original.slice(0, -1) + replacement;
 
-    const decoded = decodeSttKey(mutated);
-    expect(decoded.checksumValid).toBeFalse();
-    expect(decoded.payloadLengthValid).toBeTrue();
-    expect(decoded.valid).toBeFalse();
+    const decoded = decodeStrKey(mutated);
+    expect(decoded.checksumValid).toBe(false);
+    expect(decoded.payloadLengthValid).toBe(true);
+    expect(decoded.valid).toBe(false);
   });
 
   it('distinguishes a checksum failure from a type/length failure', () => {
     const original = fixture('CONTRACT');
     const mutated = original.slice(0, -1) + (original.slice(-1) === 'A' ? 'B' : 'A');
-    const checksumFailure = decodeSttKey(mutated);
+    const checksumFailure = decodeStrKey(mutated);
 
     // A type/length failure has a valid checksum but a wrong payload length.
-    const wrongLength = encodeStrKey(
-      'CONTRACT',
-      new Uint8Array(Array.from({ length: 31 }, () => 0x01)),
-    );
+    const wrongPayload = new Uint8Array(Array.from({ length: 31 }, () => 0x01));
+    const wrongBody = new Uint8Array(1 + wrongPayload.length);
+    wrongBody[0] = STRKEY_VERSIONS.CONTRACT;
+    wrongBody.set(wrongPayload, 1);
+    const wrongCrc = crc16XModem(wrongBody);
+    const wrongFull = new Uint8Array(wrongBody.length + 2);
+    wrongFull.set(wrongBody, 0);
+    wrongFull[wrongBody.length] = (wrongCrc >> 8) & 0xff;
+    wrongFull[wrongBody.length + 1] = wrongCrc & 0xff;
+    const wrongLength = base32Encode(wrongFull);
     const lengthFailure = decodeStrKey(wrongLength);
 
     expect(checksumFailure.checksumValid).toBe(false);
-    expect(checksumFailure.payloadLengthValid).toBeTrue();
+    expect(checksumFailure.payloadLengthValid).toBe(true);
 
-    expect(lengthFailure.checksumValid).toBeTrue();
+    expect(lengthFailure.checksumValid).toBe(true);
     expect(lengthFailure.payloadLengthValid).toBe(false);
   });
 
   it('throws for inputs that are not decodable at all', () => {
-    expect(() => decodeSttKey('0')).toThrow(StrKeyError);
+    expect(() => decodeStrKey('0')).toThrow(StrKeyError);
     expect(() => decodeStrKey('')).toThrow(StrKeyError);
   });
 });
@@ -227,7 +233,7 @@ describe('payload-length validation', () => {
   it.each(STRKEY_TYPES_IN_ORDER)('%s rejects a long payload', (type) => {
     const expectedLength = STRKEY_PAYLOAD_LENGTH[type];
     const long = new Uint8Array(expectedLength + 1);
-    expect(() => encodeSttKey(type, long)).toThrow(StrKeyError);
+    expect(() => encodeStrKey(type, long)).toThrow(StrKeyError);
   });
 
   it('surfaces the expected length in the error details', () => {
@@ -253,14 +259,14 @@ describe('secret masking', () => {
     const masked = maskStrKey(secret);
 
     expect(masked).not.toBe(secret);
-    expect(masked.startsWith('S')).toBeTrue);
-    expect(masked.endsWith(secret.slice(-4))).toBeTrue);
+    expect(masked.startsWith('S')).toBe(true);
+    expect(masked.endsWith(secret.slice(-4))).toBe(true);
     expect(masked.length).toBe(secret.length);
   });
 
   it('identifies the secret type and not others', () => {
-    expect(isSecretType('PRIVATE_KEY')).toBeTrue();
-    expect(isSecretType('EDPARD_KEYS')).toBe(false);
+    expect(isSecretType('PRIVATE_KEY')).toBe(true);
+    expect(isSecretType('EDNARD_KEYS')).toBe(false);
     expect(isSecretType('CONTRACT')).toBe(false);
     expect(isSecretType(null)).toBe(false);
   });

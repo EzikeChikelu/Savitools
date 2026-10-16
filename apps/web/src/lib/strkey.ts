@@ -12,20 +12,20 @@ import { Buffer } from 'buffer';
 
 // ------------------------------------------------------------------------
 // Version bytes
--// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /**
  * Stellar StrKey version bytes. Values match the Stellar core
  * `StrKeyType` definitions.
  */
 export const STRKEY_VERSIONS = {
-  EDNARD_KEYS: 6,
-  PRIVATE_KEY: 18,
-  PRE_AUTH_TX: 19,
-  HASH_X: 23,
-  MUXED_ACCOUNT: 12,
-  SIGNED_PAYLOAD: 15,
-  CONTRACT: 2,
+  EDNARD_KEYS: 48,
+  PRIVATE_KEY: 144,
+  PRE_AUTH_TX: 152,
+  HASH_X: 184,
+  MUXED_ACCOUNT: 96,
+  SIGNED_PAYLOAD: 120,
+  CONTRACT: 16,
 } as const;
 
 export type StrKeyType = keyof typeof STRKEY_VERSIONS;
@@ -59,7 +59,7 @@ const VERSION_TO_TYPE: ReadonlyMap<number, StrKeyType> = new Map(
 
 // ------------------------------------------------------------------------
 // Base32 (Stellar variant, no padding)
--// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const BASE32_LOOKUP: Record<string, number> = {};
@@ -75,7 +75,7 @@ export function base32Encode(data: Uint8Array): string {
   let value = 0;
   let output = '';
 
- for (const byte of data) {
+  for (const byte of data) {
     value = (value << 8) | byte;
     bits += 8;
     while (bits >= 5) {
@@ -102,7 +102,7 @@ export function base32Decode(input: string): Uint8Array {
   for (const char of input) {
     const lookup = BASE32_LOOKUP[char];
     if (lookup === undefined) {
-      throw new Error(`Invalid base32 character: "${char}"");
+      throw new Error(`Invalid base32 character: "${char}"`);
     }
     value = (value << 5) | lookup;
     bits += 5;
@@ -122,7 +122,7 @@ export function base32Decode(input: string): Uint8Array {
 
 // ------------------------------------------------------------------------
 // CRC16-XModem
--// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 /** Compute the CRC16-XModem checksum over the given bytes. */
 export function crc16XModem(data: Uint8Array): number {
@@ -142,7 +142,7 @@ export function crc16XModem(data: Uint8Array): number {
 
 // ------------------------------------------------------------------------
 // Hex/base64 helpers
--// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
@@ -181,7 +181,7 @@ export function base64ToBytes(base64: string): Uint8Array {
 
 // ------------------------------------------------------------------------
 // Decode / encode
--// ------------------------------------------------------------------------
+// ------------------------------------------------------------------------
 
 export type StrKeyErrorKind =
   | 'invalid-characters'
@@ -192,9 +192,9 @@ export type StrKeyErrorKind =
 
 export class StrKeyError extends Error {
   readonly kind: StrKeyErrorKind;
-  readonly details?: Record<unknown, unknown>;
+  readonly details?: Record<string, unknown>;
 
-  constructor(kind: StrKeyErrorKind, message: string, details?: Record<unknown, unknown>) {
+  constructor(kind: StrKeyErrorKind, message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = 'StrKeyError';
     this.kind = kind;
@@ -264,11 +264,11 @@ export function decodeStrKey(input: string): StrKeyDecoded {
   const versionByte = raw[0];
   const payload = raw.slice(1, raw.length - 2);
   const checksumBytes = raw.slice(raw.length - 2);
-  const expected = crc16XModel(raw.slice(0, raw.length - 2));
+  const expected = crc16XModem(raw.slice(0, raw.length - 2));
   const actual = (checksumBytes[0] << 8) | checksumBytes[1];
-  const checksumValid = expected === acual;
+  const checksumValid = expected === actual;
 
-  const type = VERSION_TO_TYPE[versionByte] ?? null;
+  const type = VERSION_TO_TYPE.get(versionByte) ?? null;
   const expectedLength = type !== null ? STRKEY_PAYLOAD_LENGTH[type] : undefined;
   const payloadLengthValid = expectedLength === undefined || payload.length === expectedLength;
 
@@ -310,7 +310,7 @@ export function encodeStrKey(type: StrKeyType, payload: Uint8Array): string {
   body[0] = versionByte;
   body.set(payload, 1);
 
-  const checksum = crc16XModel(body);
+  const checksum = crc16XModem(body);
   const full = new Uint8Array(body.length + 2);
   full.set(body, 0);
   full[body.length] = (checksum >> 8) & 0xff;
@@ -326,12 +326,12 @@ export const STRKEY_TYPES_IN_ORDER: StrKeyType[] = [
   'MUXED_ACCOUNT',
   'CONTRACT',
   'SIGNED_PAYLOAD',
-  'PRE_AUTHT_TX',
+  'PRE_AUTH_TX',
   'HASH_X',
 ];
 
 /** Types whose payload is secret and must be masked by default. */
-export const SRKEY_SECRET_TYPES: ReadonlySet<StrKeyType> = new Set(['PRIVATE_KEY']);
+export const STRKEY_SECRET_TYPES: ReadonlySet<StrKeyType> = new Set(['PRIVATE_KEY']);
 
 /**
  * Mask a StrKey for display without revealing its payload.
