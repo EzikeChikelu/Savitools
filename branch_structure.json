@@ -1,0 +1,18 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "feat/issue-150-feat-soroban-event-parser-with-decoded",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "feat/issue-150-feat-soroban-event-parser-with-decoded": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "feat/issue-150-feat-soroban-event-parser-with-decoded",
+    "origin"
+  ]
+}
